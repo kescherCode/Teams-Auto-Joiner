@@ -7,20 +7,23 @@
 - [Run the script](#run-the-script)
 
 Python script to automatically join Microsoft Teams meetings.
-Automatically turns off your microphone and camera before joining. Automatic login and blacklist can be set in the config file.
+Automatically turns off your microphone and camera before joining. Blacklist can be set in the config file.
 
 Always joins the newest meeting and leaves either after a specified time, if you are the last person in the meeting or only if a new one is available (see [Configuration options](#configuration-options) for more information).
-I also made a short tutorial video on how to setup the bot: https://youtu.be/YgkSOqfIjf4
 
+## This is a fork
+...with the following modifications:
+
+- Makes it work on GNU/Linux
+- Enforce persistent data (to save Teams settings)
+- Allows third-party cookies and doesn't delete data on exit
+- No longer allows Google Chrome or Microsoft Edge to be used (Chromium is enforced)
 
 ## Prerequisites  
   
  - Python3 ([Download](https://www.python.org/downloads/))  
    
-## Configuration options  
-  
-- **email/password:**  
-The email/password of your Microsoft account (can be left empty if you don't want to automatically login)  
+## Configuration options
 
 - **run_at_time:**  
 Time to start the script at. Input is a string of the hour and minute in 24h format, if you want it to start immediately leave this empty. 
@@ -68,8 +71,8 @@ If true, runs Chrome in headless mode (does not open GUI window and runs in back
 - **mute_audio:**
 If true, mutes all the sounds.
 
-- **chrome_type:**
-Valid options: `google-chrome`, `chromium`, `msedge`. By default, google chrome is used, but the script can also be used with Chromium or Microsoft Edge.
+- **user-data-dir:**
+Must be set in order to keep login data between sessions. Please set this.
 
 - **blacklist:**
 A list of Teams and their channels to ignore. Meetings ocurring in these channels w**ill not be joined.

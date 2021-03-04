@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import json
 import random
 import re
@@ -10,15 +12,12 @@ from selenium.common import exceptions
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.common.keys import Keys
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.utils import ChromeType
-from webdriver_manager.microsoft import EdgeChromiumDriverManager
-from msedge.selenium_tools import Edge, EdgeOptions
 
 browser: webdriver.Chrome = None
 total_members = None
-config = None
+config = {}
 meetings = []
 current_meeting = None
 already_joined_ids = []
@@ -57,7 +56,8 @@ class Team:
             try:
                 self.get_elem().click()
                 self.get_elem().find_element_by_css_selector("div.channels")
-            except (exceptions.NoSuchElementException, exceptions.ElementNotInteractableException, exceptions.ElementClickInterceptedException):
+            except (exceptions.NoSuchElementException, exceptions.ElementNotInteractableException,
+                    exceptions.ElementClickInterceptedException):
                 return None
 
     def get_channels(self):
@@ -118,7 +118,6 @@ class Meeting:
 
     def check_blacklist_calendar_meeting(self):
         if "blacklist_meeting_re" in config and config['blacklist_meeting_re'] != "":
-
             regex = config['blacklist_meeting_re']
             return True if re.search(regex, self.title) else False
 
@@ -136,12 +135,9 @@ def load_config():
 def init_browser():
     global browser
 
-    if "chrome_type" in config and config['chrome_type'] == "msedge":
-        chrome_options = EdgeOptions()
-        chrome_options.use_chromium = True
-
-    else:
-        chrome_options = webdriver.ChromeOptions()
+    chrome_options = webdriver.ChromeOptions()
+    if "user-data-dir" in config and config['user-data-dir'] != "":
+        chrome_options.add_argument(f"--user-data-dir={config['user-data-dir']}")
 
     chrome_options.add_argument('--ignore-certificate-errors')
     chrome_options.add_argument('--ignore-ssl-errors')
@@ -152,6 +148,10 @@ def init_browser():
         'profile.default_content_setting_values.media_stream_camera': 1,
         'profile.default_content_setting_values.geolocation': 1,
         'profile.default_content_setting_values.notifications': 1,
+        'profile.default_content_setting_values.cookies': 1,
+        'profile.block_third_party_cookies': False,
+        'network.cookie.cookieBehavior': 0,
+        'profile.cookie_controls_mode': 0,
         'profile': {
             'password_manager_enabled': False
         }
@@ -167,16 +167,10 @@ def init_browser():
     if 'mute_audio' in config and config['mute_audio']:
         chrome_options.add_argument("--mute-audio")
 
-    if 'chrome_type' in config:
-        if config['chrome_type'] == "chromium":
-            browser = webdriver.Chrome(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install(),
-                                       options=chrome_options)
-        elif config['chrome_type'] == "msedge":
-            browser = Edge(EdgeChromiumDriverManager().install(), options=chrome_options)
-        else:
-            browser = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
-    else:
-        browser = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
+    chrome_options.set_capability('deleteDataPostSession', False)
+    chrome_options.set_capability('cookiePageAllowAll', True)
+    browser = webdriver.Chrome(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install(),
+                               options=chrome_options)
 
     # make the window a minimum width to show the meetings menu
     window_size = browser.get_window_size()
@@ -511,8 +505,8 @@ def hangup():
 
 # Handles logic for leave number threshold and percent threshold. Return True for did hangup, or False for did not.
 def handle_leave_threshold(current_members, total_members):
-    print("Current: "+str(current_members))
-    print("Total: "+str(total_members))
+    print("Current: " + str(current_members))
+    print("Total: " + str(total_members))
     leave_number = config["leave_threshold_number"]
     leave_percentage = config["leave_threshold_percentage"]
 
@@ -523,7 +517,7 @@ def handle_leave_threshold(current_members, total_members):
             return True
     if leave_number != "":
         if float(leave_number) <= 0:
-            print(leave_number+" is not a valid value for threshold. Threshold number must be greater than 1.")
+            print(leave_number + " is not a valid value for threshold. Threshold number must be greater than 1.")
             return False
         if current_members < float(leave_number):
             print("Last attendee in meeting")
@@ -531,13 +525,14 @@ def handle_leave_threshold(current_members, total_members):
             return True
     else:
         if 0 < float(leave_percentage) <= 150:
-            if (current_members/total_members)*100 < float(leave_percentage):
+            if (current_members / total_members) * 100 < float(leave_percentage):
                 print("Last attendee in meeting")
                 hangup()
                 return True
         else:
-          print(leave_percentage+" is not a valid value for threshold. Threshold percent must be greater than 0 and less than 100.")
-          return False
+            print(
+                leave_percentage + " is not a valid value for threshold. Threshold percent must be greater than 0 and less than 100.")
+            return False
 
     return False
 
@@ -552,35 +547,6 @@ def main():
     init_browser()
 
     browser.get("https://teams.microsoft.com")
-
-    if config['email'] != "" and config['password'] != "":
-        login_email = wait_until_found("input[type='email']", 30)
-        if login_email is not None:
-            login_email.send_keys(config['email'])
-
-        # find the element again to avoid StaleElementReferenceException
-        login_email = wait_until_found("input[type='email']", 5)
-        if login_email is not None:
-            login_email.send_keys(Keys.ENTER)
-
-        login_pwd = wait_until_found("input[type='password']", 10)
-        if login_pwd is not None:
-            login_pwd.send_keys(config['password'])
-
-        # find the element again to avoid StaleElementReferenceException
-        login_pwd = wait_until_found("input[type='password']", 5)
-        if login_pwd is not None:
-            login_pwd.send_keys(Keys.ENTER)
-
-        keep_logged_in = wait_until_found("input[id='idBtn_Back']", 5)
-        if keep_logged_in is not None:
-            keep_logged_in.click()
-        else:
-            print("Login Unsuccessful, recheck entries in config.json")
-
-        use_web_instead = wait_until_found(".use-app-lnk", 5, print_error=False)
-        if use_web_instead is not None:
-            use_web_instead.click()
 
     # if additional organisations are setup in the config file
     if 'organisation_num' in config and config['organisation_num'] > 1:
