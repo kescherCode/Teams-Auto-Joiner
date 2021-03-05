@@ -617,6 +617,8 @@ def main():
                 if meeting_to_join is not None:
                     total_members = 0
                     join_meeting(meeting_to_join)
+                else:
+                    print("Didn't join any available meetings (none are new)")
 
         meetings = []
         members_count = None
@@ -627,7 +629,12 @@ def main():
             elif not members_count:
                 hangup_success = hangup()
                 if not hangup_success:
+                    # If the member count can't be gathered, AND hangup fails, we assume the meeting was left.
+                    # This will cause searching for new meetings if the user went back to the Teams view manually,
+                    # even if pause_search is set to true.
                     current_meeting = None
+                    members_count = None
+                    total_members = None
 
         if "leave_if_last" in config and config['leave_if_last'] and interval_count % 5 == 0 and interval_count > 0:
             if current_meeting is not None and members_count is not None and total_members is not None:
