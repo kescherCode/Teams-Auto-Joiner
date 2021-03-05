@@ -635,6 +635,7 @@ def main():
                     current_meeting = None
                     members_count = None
                     total_members = None
+                    print("Assuming we left the meeting prematurely...")
 
         if "leave_if_last" in config and config['leave_if_last'] and interval_count % 5 == 0 and interval_count > 0:
             if current_meeting is not None and members_count is not None and total_members is not None:
