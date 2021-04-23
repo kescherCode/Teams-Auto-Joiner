@@ -16,6 +16,8 @@
 
   "headless" : false,
   "mute_audio": false,
+  "mute_mic": true,
+  "video_off": true,
   "user-data-dir": "/home/exampleuser/.local/share/Teams-Auto-Joiner-chromium-data",
 
   "blacklist": [

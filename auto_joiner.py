@@ -399,20 +399,30 @@ def join_meeting(meeting):
     # turn camera off
     video_btn = browser.find_element_by_css_selector("toggle-button[data-tid='toggle-video']>div>button")
     video_is_on = video_btn.get_attribute("aria-pressed")
-    if video_is_on == "true":
-        video_btn.click()
-        print("Video off")
+    if ('video_off' in config and config['video_off']) or ('video_off' not in config):
+        if video_is_on == "true":
+            video_btn.click()
+            print("Video off")
+    else:
+        if video_is_on == "false":
+            video_btn.click()
+            print("Video on")
 
     # turn mic off
     audio_btn = browser.find_element_by_css_selector("toggle-button[data-tid='toggle-mute']>div>button")
     audio_is_on = audio_btn.get_attribute("aria-pressed")
-    if audio_is_on == "true":
-        audio_btn.click()
-        print("Audio off")
+    if ('mute_mic' in config and config['mute_mic']) or ('mute_mic' not in config):
+        if audio_is_on == "true":
+            audio_btn.click()
+            print("Audio off")
+    else:
+        if audio_is_on == "false":
+            audio_btn.click()
+            print("Audio on")
 
     if 'random_delay' in config and config['random_delay']:
         delay = random.randrange(10, 31, 1)
-        print(f"Wating for {delay}s")
+        print(f"Waiting for {delay}s")
         time.sleep(delay)
 
     # find again to avoid stale element exception
